@@ -1,25 +1,33 @@
-import { IsNotEmpty, IsString, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum TaskStatus {
-  PENDING = 'Pending',
-  IN_PROGRESS = 'In Progress',
-  DONE = 'Done',
-}
+import { TaskStatus } from '@prisma/client';
 
 export class CreateTaskDto {
-  @ApiProperty()
+  @ApiProperty({
+    example: 'Complete Project Documentation',
+    description: 'The title of the task',
+    minLength: 1,
+    maxLength: 100,
+  })
   @IsNotEmpty()
   @IsString()
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'Write comprehensive API documentation',
+  })
   @IsNotEmpty()
   @IsString()
   description: string;
 
-  @ApiProperty({ enum: TaskStatus })
-  @IsNotEmpty()
+  @ApiProperty({
+    enum: TaskStatus,
+    example: TaskStatus.PENDING,
+    default: TaskStatus.PENDING,
+    required: false,
+    description: 'Task status (defaults to PENDING if not provided)',
+  })
+  @IsOptional()
   @IsEnum(TaskStatus)
-  status: TaskStatus;
+  status?: TaskStatus;
 }

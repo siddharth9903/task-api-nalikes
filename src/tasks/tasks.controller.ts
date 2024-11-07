@@ -6,50 +6,88 @@ import {
   Patch,
   Param,
   Delete,
+  HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Task } from '@prisma/client';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Task } from './entities/task.entity';
+import { TaskEntity } from './entities/task.entity';
+import { ErrorMessages } from '../common/constants';
 
-@ApiTags('tasks')
+@ApiTags('Tasks')
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new task' })
-  @ApiResponse({ status: 201, type: Task })
-  create(@Body() createTaskDto: CreateTaskDto) {
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Task created successfully',
+    type: TaskEntity,
+  })
+  create(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
     return this.tasksService.create(createTaskDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all tasks' })
-  @ApiResponse({ status: 200, type: [Task] })
-  findAll() {
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of all tasks',
+    type: TaskEntity,
+    isArray: true,
+  })
+  findAll(): Promise<Task[]> {
     return this.tasksService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a task by id' })
-  @ApiResponse({ status: 200, type: Task })
-  findOne(@Param('id') id: string) {
+  @ApiParam({
+    name: 'id',
+    description: 'Task UUID v4',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Task found successfully',
+    type: TaskEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessages.TASK_NOT_FOUND,
+  })
+  findOne(@Param('id') id: string): Promise<Task> {
     return this.tasksService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a task' })
-  @ApiResponse({ status: 200, type: Task })
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Task updated successfully',
+    type: TaskEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessages.TASK_NOT_FOUND,
+  })
+  update(
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ): Promise<Task> {
     return this.tasksService.update(id, updateTaskDto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a task' })
-  @ApiResponse({ status: 200, type: Task })
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(id);
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Task deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessages.TASK_NOT_FOUND,
+  })
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.tasksService.remove(id);
   }
 }
